@@ -1,18 +1,26 @@
-# requirements.txt - Sistema Parroquial v4.0 con Supabase
+# requirements.txt - Sistema Parroquial v4.0
 
 # Framework Web
 streamlit==1.31.0
 
 # Base de Datos
 sqlmodel==0.0.14
-psycopg2-binary  # PostgreSQL driver para Supabase
+psycopg[binary]==3.1.18  # PostgreSQL driver para Supabase
+sqlalchemy==2.0.44       # Incluido en sqlmodel pero explícito
 
 # Utilidades
-python-dotenv==1.0.0   # Para cargar variables de entorno desde .env
+python-dotenv==1.0.0
 
-# Opcional: Si quieres soporte para archivos Excel
+# Constancias y Documentos
+qrcode[pil]==7.4.2       # Generación de códigos QR
+pillow==10.2.0           # Procesamiento de imágenes
+reportlab==4.0.9         # Generación de PDFs (opcional)
+
+# Validaciones
+pydantic==2.12.3         # Incluido en sqlmodel pero útil
+
+# Opcional: Excel
 # openpyxl==3.1.2
 
-# Opcional: Si necesitas generar PDFs
-# reportlab==4.0.9
+# Opcional: Más procesamiento de PDFs
 # pypdf==3.17.4

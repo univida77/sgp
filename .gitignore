@@ -19,12 +19,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Entorno Virtual
 venv/
 ENV/
 env/
 .venv
+.virtualenv
 
 # Poetry
 poetry.lock
@@ -34,6 +36,7 @@ poetry.lock
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Base de datos
 *.db
@@ -42,6 +45,7 @@ poetry.lock
 parroquia.db
 parroquia.db-journal
 parroquia.db-wal
+database/*.db
 
 # IDEs
 .vscode/
@@ -50,19 +54,24 @@ parroquia.db-wal
 *.swo
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
 
 # Streamlit
 .streamlit/
+.streamlit/secrets.toml
 
 # Logs
 *.log
 logs/
+*.log.*
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
+.hypothesis/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -71,8 +80,23 @@ htmlcov/
 *.bak
 *.backup
 *.old
+*~
 
 # Archivos temporales
 tmp/
 temp/
 *.tmp
+.cache/
+
+# Archivos de sistema
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Archivos de constancias generadas
+constancias/
+certificados/
+pdfs_generados/
+
+# Archivos __init__.py vacíos (innecesarios)
+# NO ignorar si contienen código

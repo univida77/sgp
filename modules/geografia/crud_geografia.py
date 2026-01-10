@@ -1,208 +1,292 @@
-# crud_geografia.py - Optimizado
+# modules/geografia/crud_geografia.py - CORREGIDO
 import streamlit as st
 from sqlmodel import Session, select
 from models import (
-    Arquidiocesis, Decanato, Parroquia, Comunidad, Capilla, CentroCatecismo
+    Pais, Provincia, Arquidiocesis, Decanato, Parroquia, 
+    Comunidad, Capilla, CentroCatecismo
 )
 
-def crear_geografia_basica(session):
-    """Crea geografía eclesiástica básica"""
-    print("🌎 Geografía eclesiástica...")
+def mostrar_crud_geografia(db_engine, db_module, db_mode, st_display_func):
+    """Módulo completo CRUD para Geografía Eclesiástica"""
+    st.header(f"🌎 Geografía Eclesiástica - Modo: {db_mode}")
     
-    # País
-    pais = session.exec(select(Pais).where(Pais.nombre_pais == "México")).first()
-    if not pais:
-        pais = Pais(nombre_pais="México", codigo_iso="MEX", activo=True)
-        session.add(pais)
-        session.flush()
-        print("   ✅ País creado")
+    st.info("💡 Estructura jerárquica: País → Provincia → Arquidiócesis → Decanato → Parroquia → Comunidad")
     
-    # Provincia
-    provincia = session.exec(select(Provincia).where(
-        Provincia.nombre_provincia == "Antequera"
-    )).first()
-    if not provincia:
-        provincia = Provincia(
-            id_pais=pais.id_pais,
-            nombre_provincia="Antequera",
-            activo=True
-        )
-        session.add(provincia)
-        session.flush()
-        print("   ✅ Provincia creada")
+    tabs = st.tabs([
+        "📋 Ver Todo",
+        "🌍 Países",
+        "⛪ Comunidades",
+        "🏰 Capillas",
+        "📚 Centros de Catecismo"
+    ])
     
-    # Arquidiócesis
-    arqui = session.exec(select(Arquidiocesis).where(
-        Arquidiocesis.nombre_arquidiocesis == "Antequera-Oaxaca"
-    )).first()
-    if not arqui:
-        arqui = Arquidiocesis(
-            id_provincia=provincia.id_provincia,
-            nombre_arquidiocesis="Antequera-Oaxaca",
-            activo=True
-        )
-        session.add(arqui)
-        session.flush()
-        print("   ✅ Arquidiócesis creada")
+    # ================================================================
+    # TAB 1: VER TODO
+    # ================================================================
+    with tabs[0]:
+        st.subheader("📋 Estructura Completa")
+        
+        with Session(db_engine) as session:
+            pais = session.exec(select(Pais).where(Pais.nombre_pais == "México")).first()
+            
+            if pais:
+                st.markdown(f"### 🌍 {pais.nombre_pais}")
+                
+                provincias = session.exec(
+                    select(Provincia).where(Provincia.id_pais == pais.id_pais)
+                ).all()
+                
+                for provincia in provincias:
+                    with st.expander(f"📍 Provincia: {provincia.nombre_provincia}"):
+                        arquidiocesis = session.exec(
+                            select(Arquidiocesis).where(
+                                Arquidiocesis.id_provincia == provincia.id_provincia
+                            )
+                        ).all()
+                        
+                        for arqui in arquidiocesis:
+                            st.markdown(f"**⛪ Arquidiócesis:** {arqui.nombre_arquidiocesis}")
+                            
+                            decanatos = session.exec(
+                                select(Decanato).where(
+                                    Decanato.id_arquidiocesis == arqui.id_arquidiocesis
+                                )
+                            ).all()
+                            
+                            for decanato in decanatos:
+                                st.markdown(f"  • **Decanato:** {decanato.nombre_decanato}")
+                                
+                                parroquias = session.exec(
+                                    select(Parroquia).where(
+                                        Parroquia.id_decanato == decanato.id_decanato
+                                    )
+                                ).all()
+                                
+                                for parroquia in parroquias:
+                                    st.markdown(f"    ◦ {parroquia.nombre_parroquia}")
+            else:
+                st.warning("⚠️ No hay datos de geografía. Ejecuta la inicialización.")
     
-    # Decanato
-    decanato = session.exec(select(Decanato).where(
-        Decanato.nombre_decanato == "Tlacolula"
-    )).first()
-    if not decanato:
-        decanato = Decanato(
-            id_arquidiocesis=arqui.id_arquidiocesis,
-            nombre_decanato="Tlacolula",
-            activo=True
-        )
-        session.add(decanato)
-        session.flush()
-        print("   ✅ Decanato creado")
+    # ================================================================
+    # TAB 2: PAÍSES
+    # ================================================================
+    with tabs[1]:
+        st.subheader("🌍 Gestión de Países")
+        
+        with Session(db_engine) as session:
+            paises = session.exec(select(Pais)).all()
+        
+        if paises:
+            for p in paises:
+                st.info(f"🌍 {p.nombre_pais} ({p.codigo_iso})")
+        else:
+            st.warning("⚠️ No hay países registrados")
+            
+            if st.button("🔧 Inicializar México"):
+                with Session(db_engine) as session:
+                    mexico = Pais(nombre_pais="México", codigo_iso="MEX", activo=True)
+                    session.add(mexico)
+                    session.commit()
+                    st.success("✅ México inicializado")
+                    st.rerun()
     
-    # Parroquia
-    parroquia = session.exec(select(Parroquia).where(
-        Parroquia.nombre_parroquia.like("%Santa María%")
-    )).first()
-    if not parroquia:
-        parroquia = Parroquia(
-            id_arquidiocesis=arqui.id_arquidiocesis,
-            id_decanato=decanato.id_decanato,
-            nombre_parroquia="Parroquia de Santa María de la Asunción",
-            direccion="Av. 2 de abril No. 22, Tlacolula de Matamoros",
-            telefono="9515620019",
-            activo=True
-        )
-        session.add(parroquia)
-        session.flush()
-        print("   ✅ Parroquia creada")
+    # ================================================================
+    # TAB 3: COMUNIDADES
+    # ================================================================
+    with tabs[2]:
+        crud_comunidades(db_engine, db_module, st_display_func)
+    
+    # ================================================================
+    # TAB 4: CAPILLAS
+    # ================================================================
+    with tabs[3]:
+        crud_capillas(db_engine, db_module, st_display_func)
+    
+    # ================================================================
+    # TAB 5: CENTROS DE CATECISMO
+    # ================================================================
+    with tabs[4]:
+        crud_centros_catecismo(db_engine, db_module, st_display_func)
+
 
 # ====================================================================
 # COMUNIDADES
 # ====================================================================
 def crud_comunidades(db_engine, db_module, st_display_func):
-    with st.expander("🏘️ Comunidades", expanded=False):
+    st.subheader("🏘️ Gestión de Comunidades")
+    
+    subtabs = st.tabs(["➕ Crear", "📋 Ver"])
+    
+    with subtabs[0]:
         with Session(db_engine) as session:
-            comunidades = session.exec(select(Comunidad)).all()
             parroquias = session.exec(select(Parroquia)).all()
-
+        
         if not parroquias:
             st.warning("⚠️ Primero registra una Parroquia")
             return
-
-        if st.button("➕ Añadir Comunidad", key="add_com"):
-            st.session_state.show_com_form = True
-
-        if st.session_state.get("show_com_form", False):
-            with st.form("form_com"):
-                nombre = st.text_input("Nombre de la Comunidad")
-                clave = st.text_input("Clave de la Comunidad")
-                opciones_parro = {p.id_parroquia: p.nombre_parroquia for p in parroquias}
-                parro_sel = st.selectbox(
-                    "Pertenece a Parroquia", 
-                    options=opciones_parro.keys(), 
-                    format_func=lambda x: opciones_parro[x]
-                )
-                
-                if st.form_submit_button("Guardar"):
-                    if nombre and clave and parro_sel:
-                        nueva = Comunidad(
-                            nombre_comunidad=nombre.strip(), 
-                            clave_comunidad=clave.strip(), 
-                            id_parroquia=parro_sel
-                        )
-                        db_module.crear_registro(nueva, db_engine, st_display_func, "Comunidad")
-                        st.session_state.show_com_form = False
+        
+        with st.form("form_comunidad"):
+            nombre = st.text_input("Nombre de la Comunidad (*)", key="com_nombre")
+            clave = st.text_input("Clave (*)", key="com_clave")
+            
+            opciones = {p.id_parroquia: p.nombre_parroquia for p in parroquias}
+            id_parroquia = st.selectbox(
+                "Parroquia (*)",
+                options=opciones.keys(),
+                format_func=lambda x: opciones[x],
+                key="com_parroquia"
+            )
+            
+            if st.form_submit_button("💾 Guardar"):
+                if nombre and clave:
+                    nueva = Comunidad(
+                        nombre_comunidad=nombre.strip(),
+                        clave_comunidad=clave.strip().upper(),
+                        id_parroquia=id_parroquia,
+                        activo=True
+                    )
+                    if db_module.crear_registro(nueva, db_engine, st_display_func, "Comunidad"):
                         st.rerun()
-
+    
+    with subtabs[1]:
         with Session(db_engine) as session:
-            for com in comunidades:
-                par = session.get(Parroquia, com.id_parroquia)
-                st.write(f"- {com.nombre_comunidad} ({com.clave_comunidad}) - {par.nombre_parroquia if par else 'N/A'}")
+            comunidades = session.exec(select(Comunidad)).all()
+        
+        if comunidades:
+            data = []
+            with Session(db_engine) as session:
+                for c in comunidades:
+                    parroquia = session.get(Parroquia, c.id_parroquia)
+                    data.append({
+                        "ID": c.id_comunidad,
+                        "Nombre": c.nombre_comunidad,
+                        "Clave": c.clave_comunidad,
+                        "Parroquia": parroquia.nombre_parroquia if parroquia else "N/A"
+                    })
+            
+            st.dataframe(data, use_container_width=True, hide_index=True)
+        else:
+            st.info("ℹ️ No hay comunidades")
+
 
 # ====================================================================
 # CAPILLAS
 # ====================================================================
 def crud_capillas(db_engine, db_module, st_display_func):
-    with st.expander("⛪ Capillas", expanded=False):
+    st.subheader("⛪ Gestión de Capillas")
+    
+    subtabs = st.tabs(["➕ Crear", "📋 Ver"])
+    
+    with subtabs[0]:
         with Session(db_engine) as session:
-            capillas = session.exec(select(Capilla)).all()
             comunidades = session.exec(select(Comunidad)).all()
-
+        
         if not comunidades:
             st.warning("⚠️ Primero registra una Comunidad")
             return
-
-        if st.button("➕ Añadir Capilla", key="add_cap"):
-            st.session_state.show_cap_form = True
-
-        if st.session_state.get("show_cap_form", False):
-            with st.form("form_cap"):
-                nombre = st.text_input("Nombre de la Capilla")
-                ubicacion = st.text_input("Ubicación")
-                opciones_com = {c.id_comunidad: f"{c.nombre_comunidad} ({c.clave_comunidad})" for c in comunidades}
-                com_sel = st.selectbox(
-                    "Pertenece a Comunidad", 
-                    options=opciones_com.keys(), 
-                    format_func=lambda x: opciones_com[x]
-                )
-                
-                if st.form_submit_button("Guardar"):
-                    if nombre and com_sel:
-                        nueva = Capilla(
-                            nombre_capilla=nombre.strip(), 
-                            ubicacion=ubicacion.strip() if ubicacion else None, 
-                            id_comunidad=com_sel
-                        )
-                        db_module.crear_registro(nueva, db_engine, st_display_func, "Capilla")
-                        st.session_state.show_cap_form = False
-                        st.rerun()
         
+        with st.form("form_capilla"):
+            nombre = st.text_input("Nombre de la Capilla (*)", key="cap_nombre")
+            ubicacion = st.text_input("Ubicación", key="cap_ubicacion")
+            
+            opciones = {c.id_comunidad: c.nombre_comunidad for c in comunidades}
+            id_comunidad = st.selectbox(
+                "Comunidad (*)",
+                options=opciones.keys(),
+                format_func=lambda x: opciones[x],
+                key="cap_comunidad"
+            )
+            
+            if st.form_submit_button("💾 Guardar"):
+                if nombre:
+                    nueva = Capilla(
+                        nombre_capilla=nombre.strip(),
+                        ubicacion=ubicacion.strip() if ubicacion else None,
+                        id_comunidad=id_comunidad,
+                        activo=True
+                    )
+                    if db_module.crear_registro(nueva, db_engine, st_display_func, "Capilla"):
+                        st.rerun()
+    
+    with subtabs[1]:
         with Session(db_engine) as session:
-            for cap in capillas:
-                com = session.get(Comunidad, cap.id_comunidad)
-                st.write(f"- {cap.nombre_capilla} - {com.nombre_comunidad if com else 'N/A'}")
+            capillas = session.exec(select(Capilla)).all()
+        
+        if capillas:
+            data = []
+            with Session(db_engine) as session:
+                for cap in capillas:
+                    comunidad = session.get(Comunidad, cap.id_comunidad)
+                    data.append({
+                        "ID": cap.id_capilla,
+                        "Nombre": cap.nombre_capilla,
+                        "Ubicación": cap.ubicacion or "N/A",
+                        "Comunidad": comunidad.nombre_comunidad if comunidad else "N/A"
+                    })
+            
+            st.dataframe(data, use_container_width=True, hide_index=True)
+        else:
+            st.info("ℹ️ No hay capillas")
+
 
 # ====================================================================
 # CENTROS DE CATECISMO
 # ====================================================================
 def crud_centros_catecismo(db_engine, db_module, st_display_func):
-    with st.expander("📚 Centros de Catecismo", expanded=False):
+    st.subheader("📚 Gestión de Centros de Catecismo")
+    
+    subtabs = st.tabs(["➕ Crear", "📋 Ver"])
+    
+    with subtabs[0]:
         with Session(db_engine) as session:
-            centros = session.exec(select(CentroCatecismo)).all()
             comunidades = session.exec(select(Comunidad)).all()
-
+        
         if not comunidades:
             st.warning("⚠️ Primero registra una Comunidad")
             return
-
-        if st.button("➕ Añadir Centro", key="add_centro"):
-            st.session_state.show_centro_form = True
-
-        if st.session_state.get("show_centro_form", False):
-            with st.form("form_centro"):
-                nombre = st.text_input("Nombre del Centro")
-                clave = st.text_input("Clave del Centro")
-                responsable = st.text_input("Responsable")
-                opciones_com = {c.id_comunidad: f"{c.nombre_comunidad} ({c.clave_comunidad})" for c in comunidades}
-                com_sel = st.selectbox(
-                    "Ubicado en Comunidad", 
-                    options=opciones_com.keys(), 
-                    format_func=lambda x: opciones_com[x]
-                )
-                
-                if st.form_submit_button("Guardar"):
-                    if nombre and clave and com_sel:
-                        nuevo = CentroCatecismo(
-                            nombre_centro=nombre.strip(), 
-                            clave_centro=clave.strip(), 
-                            responsable=responsable.strip() if responsable else None, 
-                            id_comunidad=com_sel
-                        )
-                        db_module.crear_registro(nuevo, db_engine, st_display_func, "Centro de Catecismo")
-                        st.session_state.show_centro_form = False
-                        st.rerun()
         
+        with st.form("form_centro"):
+            nombre = st.text_input("Nombre del Centro (*)", key="cen_nombre")
+            clave = st.text_input("Clave (*)", key="cen_clave")
+            responsable = st.text_input("Responsable", key="cen_responsable")
+            
+            opciones = {c.id_comunidad: c.nombre_comunidad for c in comunidades}
+            id_comunidad = st.selectbox(
+                "Comunidad (*)",
+                options=opciones.keys(),
+                format_func=lambda x: opciones[x],
+                key="cen_comunidad"
+            )
+            
+            if st.form_submit_button("💾 Guardar"):
+                if nombre and clave:
+                    nuevo = CentroCatecismo(
+                        nombre_centro=nombre.strip(),
+                        clave_centro=clave.strip().upper(),
+                        responsable=responsable.strip() if responsable else None,
+                        id_comunidad=id_comunidad,
+                        activo=True
+                    )
+                    if db_module.crear_registro(nuevo, db_engine, st_display_func, "Centro"):
+                        st.rerun()
+    
+    with subtabs[1]:
         with Session(db_engine) as session:
-            for cen in centros:
-                com = session.get(Comunidad, cen.id_comunidad)
-                st.write(f"- {cen.nombre_centro} ({cen.clave_centro}) - {com.nombre_comunidad if com else 'N/A'}")
+            centros = session.exec(select(CentroCatecismo)).all()
+        
+        if centros:
+            data = []
+            with Session(db_engine) as session:
+                for cen in centros:
+                    comunidad = session.get(Comunidad, cen.id_comunidad)
+                    data.append({
+                        "ID": cen.id_centro,
+                        "Nombre": cen.nombre_centro,
+                        "Clave": cen.clave_centro,
+                        "Responsable": cen.responsable or "N/A",
+                        "Comunidad": comunidad.nombre_comunidad if comunidad else "N/A"
+                    })
+            
+            st.dataframe(data, use_container_width=True, hide_index=True)
+        else:
+            st.info("ℹ️ No hay centros")
