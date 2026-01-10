@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "sistema-parroquial"
+version = "3.0.0"
+description = "Sistema de Gestión Parroquial - Python + Streamlit + SQLModel + MySQL"
+authors = ["Tu Nombre <tu@email.com>"]
+readme = "README.md"
+packages = [{include = "sistema_parroquial"}]
+
+[tool.poetry.dependencies]
+python = ">=3.13.9"
+streamlit = "^1.51.0"
+sqlmodel = "^0.0.27"
+sqlalchemy = "^2.0.44"
+mysql-connector-python = "^9.5.0"
+python-dotenv = "^1.2.1"
+pydantic = "^2.12.3"
+python-dateutil = "^2.8.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.0"
+flake8 = "^6.1.0"
+pytest = "^7.4.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

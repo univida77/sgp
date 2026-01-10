@@ -1,0 +1,18 @@
+# requirements.txt - Sistema Parroquial v4.0 con Supabase
+
+# Framework Web
+streamlit==1.31.0
+
+# Base de Datos
+sqlmodel==0.0.14
+psycopg2-binary==2.9.9  # PostgreSQL driver para Supabase
+
+# Utilidades
+python-dotenv==1.0.0   # Para cargar variables de entorno desde .env
+
+# Opcional: Si quieres soporte para archivos Excel
+# openpyxl==3.1.2
+
+# Opcional: Si necesitas generar PDFs
+# reportlab==4.0.9
+# pypdf==3.17.4
