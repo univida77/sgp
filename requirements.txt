@@ -5,7 +5,7 @@ streamlit==1.31.0
 
 # Base de Datos
 sqlmodel==0.0.14
-psycopg2-binary  # PostgreSQL driver para Supabase
+psycopg2-binary==2.9.9 # PostgreSQL driver para Supabase
 
 qrcode
 
