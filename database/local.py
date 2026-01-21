@@ -1,4 +1,9 @@
-# database/local.py - CORREGIDO CON MARCADO DE SINCRONIZACIÓN
+# database/local.py - MODIFICADO PARA FELIGRES
+"""
+CAMBIO ARQUITECTÓNICO: Persona → Feligres
+Funciones CRUD actualizadas
+"""
+
 from typing import List, Optional, Dict, Any
 from sqlmodel import create_engine, Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
@@ -30,7 +35,7 @@ def get_engine():
         )
         
         SQLModel.metadata.create_all(engine)
-        print("✅ Base de datos SQLite inicializada")
+        print("✅ Base de datos SQLite inicializada con modelo Feligres")
         return engine
         
     except Exception as e:
@@ -135,12 +140,10 @@ def contar_pendientes_sincronizacion(engine) -> int:
     if not engine:
         return 0
     
-    # ✅ CORRECCIÓN: Importar desde sync_manager o usar SYNC_ORDER_COMPLETE
     try:
         from sync_manager import SYNC_ORDER
         modelos = SYNC_ORDER
     except ImportError:
-        # Si no existe SYNC_ORDER en sync_manager, usar SYNC_ORDER_COMPLETE de models
         from models import SYNC_ORDER_COMPLETE
         modelos = SYNC_ORDER_COMPLETE
     
@@ -151,7 +154,6 @@ def contar_pendientes_sincronizacion(engine) -> int:
             if hasattr(modelo, 'sincronizado'):
                 try:
                     with Session(engine) as session:
-                        # Contar registros no sincronizados
                         count = len([
                             r for r in session.exec(select(modelo)).all()
                             if not r.sincronizado
@@ -165,17 +167,69 @@ def contar_pendientes_sincronizacion(engine) -> int:
         return 0
 
 # ====================================================================
-# 4. FUNCIONES ESPECÍFICAS PARA PERSONA
+# 4. FUNCIONES ESPECÍFICAS PARA FELIGRES (antes Persona)
 # ====================================================================
 
-def crear_persona(persona: Persona, engine, st_display_func, synchronize: bool = False) -> bool:
-    return crear_registro(persona, engine, st_display_func, synchronize, "Persona")
+def crear_feligres(feligres: Feligres, engine, st_display_func, synchronize: bool = False) -> bool:
+    """
+    Crea un nuevo feligrés en la base de datos.
+    CAMBIO: Antes era crear_persona
+    """
+    return crear_registro(feligres, engine, st_display_func, synchronize, "Feligrés")
 
-def leer_personas(engine) -> List[Persona]:
-    return leer_registros(Persona, engine)
+def leer_feligreses(engine) -> List[Feligres]:
+    """
+    Lee todos los feligreses.
+    CAMBIO: Antes era leer_personas
+    """
+    return leer_registros(Feligres, engine)
+
+def actualizar_feligres(feligres_id: int, datos: Dict[str, Any], engine, st_display_func) -> bool:
+    """
+    Actualiza un feligrés existente.
+    CAMBIO: Antes era actualizar_persona con persona_id
+    """
+    return actualizar_registro(Feligres, feligres_id, datos, engine, st_display_func, "Feligrés")
+
+def eliminar_feligres(feligres_id: int, engine, st_display_func, synchronize: bool = False) -> bool:
+    """
+    Elimina un feligrés.
+    CAMBIO: Antes era eliminar_persona con persona_id
+    """
+    return eliminar_registro(Feligres, feligres_id, engine, st_display_func, synchronize, "Feligrés")
+
+
+# ====================================================================
+# 5. COMPATIBILIDAD HACIA ATRÁS (DEPRECADO)
+# ====================================================================
+
+def crear_persona(persona: Feligres, engine, st_display_func, synchronize: bool = False) -> bool:
+    """
+    DEPRECADO: Usar crear_feligres
+    Mantenido temporalmente para no romper código existente
+    """
+    import warnings
+    warnings.warn(
+        "crear_persona está deprecado. Usa crear_feligres",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return crear_feligres(persona, engine, st_display_func, synchronize)
+
+def leer_personas(engine) -> List[Feligres]:
+    """DEPRECADO: Usar leer_feligreses"""
+    import warnings
+    warnings.warn("leer_personas está deprecado. Usa leer_feligreses", DeprecationWarning)
+    return leer_feligreses(engine)
 
 def actualizar_persona(persona_id: int, datos: Dict[str, Any], engine, st_display_func) -> bool:
-    return actualizar_registro(Persona, persona_id, datos, engine, st_display_func, "Persona")
+    """DEPRECADO: Usar actualizar_feligres"""
+    import warnings
+    warnings.warn("actualizar_persona está deprecado. Usa actualizar_feligres", DeprecationWarning)
+    return actualizar_feligres(persona_id, datos, engine, st_display_func)
 
 def eliminar_persona(persona_id: int, engine, st_display_func, synchronize: bool = False) -> bool:
-    return eliminar_registro(Persona, persona_id, engine, st_display_func, synchronize, "Persona")
+    """DEPRECADO: Usar eliminar_feligres"""
+    import warnings
+    warnings.warn("eliminar_persona está deprecado. Usa eliminar_feligres", DeprecationWarning)
+    return eliminar_feligres(persona_id, engine, st_display_func, synchronize)

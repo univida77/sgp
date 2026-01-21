@@ -3,6 +3,8 @@
 Sistema de Gestión Parroquial v4.0
 Base de datos: SQLite (local) + Supabase/PostgreSQL (remoto)
 
+⚠️ CAMBIO ARQUITECTÓNICO: Persona → Feligres
+
 Parroquia de Santa María de la Asunción
 Tlacolula de Matamoros, Oaxaca
 """
@@ -43,8 +45,8 @@ from sync_manager import sincronizar_bases_de_datos, sincronizar_local_a_remoto
 from database import local as database_local
 from database import remote as database_remote
 
-# Módulos: Personas
-from modules.personas import crud_personas, crud_contacto, crud_catecumenos
+# Módulos: Feligreses (⚠️ CAMBIO: antes Personas)
+from modules.feligreses import crud_feligreses, crud_contacto, crud_catecumenos
 
 # Módulos: Pastoral
 from modules.geografia import crud_geografia
@@ -132,11 +134,14 @@ def sincronizar_todas_las_tablas(db_local_engine, db_remote_engine, st_display_f
 
 
 def obtener_estadisticas_rapidas(db_engine, db_module):
-    """Obtiene estadísticas rápidas del sistema"""
+    """
+    Obtiene estadísticas rápidas del sistema.
+    ⚠️ ACTUALIZADO para usar Feligres
+    """
     try:
         with Session(db_engine) as session:
             stats = {
-                'personas': session.exec(select(func.count(Persona.id_persona))).first() or 0,
+                'feligreses': session.exec(select(func.count(Feligres.id_feligres))).first() or 0,  # ⚠️ CAMBIO
                 'telefonos': session.exec(select(func.count(Telefono.id_telefono))).first() or 0,
                 'direcciones': session.exec(select(func.count(Direccion.id_direccion))).first() or 0,
                 'catecumenos': session.exec(select(func.count(Catecumeno.id_catecumeno))).first() or 0,
@@ -171,7 +176,8 @@ def mostrar_pagina_inicio():
     
     ### 🎯 Sistema Completo de Gestión Pastoral y Administrativa
     
-    **Versión 4.0** - Arquitectura modular con Supabase
+    **Versión 4.0** - Arquitectura modular con Supabase  
+    ⚠️ **Modelo actualizado: Feligres** (antes Personas)
     """)
     
     # Mostrar estadísticas si hay conexión
@@ -181,10 +187,10 @@ def mostrar_pagina_inicio():
         if stats:
             st.markdown("### 📊 Estadísticas del Sistema")
             
-            # Fila 1: Personas
+            # Fila 1: Feligreses (⚠️ CAMBIO)
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("👥 Personas", f"{stats['personas']:,}")
+                st.metric("👥 Feligreses", f"{stats['feligreses']:,}")  # ⚠️ CAMBIO
             with col2:
                 st.metric("📱 Teléfonos", f"{stats['telefonos']:,}")
             with col3:
@@ -201,7 +207,7 @@ def mostrar_pagina_inicio():
             with col3:
                 st.metric("📅 Sesiones", f"{stats['sesiones']:,}")
             with col4:
-                completitud = (stats['telefonos'] / stats['personas'] * 100) if stats['personas'] > 0 else 0
+                completitud = (stats['telefonos'] / stats['feligreses'] * 100) if stats['feligreses'] > 0 else 0
                 st.metric("✅ Contactos", f"{completitud:.0f}%")
             
             # Fila 3: Administración
@@ -227,8 +233,8 @@ def mostrar_pagina_inicio():
         
         with col1:
             st.markdown("""
-            **👥 Gestión de Personas**
-            - Registro de personas
+            **👥 Gestión de Feligreses**
+            - Registro de feligreses
             - Contacto (teléfonos/direcciones)
             - Catecúmenos
             
@@ -366,8 +372,8 @@ with st.sidebar:
         [
             "🏠 Inicio",
             
-            "--- 👥 PERSONAS ---",
-            "👥 Personas",
+            "--- 👥 FELIGRESES ---",  # ⚠️ CAMBIO
+            "👥 Feligreses",          # ⚠️ CAMBIO
             "📱 Contacto",
             "📚 Catecúmenos",
             
@@ -402,6 +408,7 @@ with st.sidebar:
     st.markdown("---")
     st.caption(f"**Modo:** {db_mode}")
     st.caption("**Versión:** 4.0 + Supabase")
+    st.caption("⚠️ Modelo: **Feligres**")  # ⚠️ NUEVO
     st.caption("🕐 " + datetime.now().strftime("%H:%M:%S"))
 
 
@@ -417,10 +424,10 @@ if menu_option.startswith("---"):
 elif menu_option == "🏠 Inicio":
     mostrar_pagina_inicio()
 
-# ========== MÓDULO: PERSONAS ==========
-elif menu_option == "👥 Personas":
+# ========== MÓDULO: FELIGRESES (⚠️ CAMBIO: antes Personas) ==========
+elif menu_option == "👥 Feligreses":  # ⚠️ CAMBIO
     if db_engine and db_module:
-        crud_personas.mostrar_crud_personas(db_engine, db_module, db_mode, st_display_func)
+        crud_feligreses.mostrar_crud_feligreses(db_engine, db_module, db_mode, st_display_func)
     else:
         st.error("❌ Sin conexión a la base de datos")
 
@@ -546,6 +553,7 @@ st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #888;'>"
     "Sistema Parroquial v4.0 - Supabase Edition<br>"
+    "⚠️ Modelo actualizado: <strong>Feligres</strong> (antes Personas)<br>"
     "Parroquia de Santa María de la Asunción • Tlacolula de Matamoros, Oaxaca<br>"
     "✨ Desarrollado con ❤️ para la gestión pastoral y administrativa"
     "</div>",

@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from models import (
     ActaReunion, AsistenteActa, HistorialActa, TipoReunion, AreaParroquial
 )
-from models import GrupoParroquial, Persona, Usuario
+from models import GrupoParroquial, feligres, Usuario
 from sqlmodel import Session, select
 from typing import Optional
 

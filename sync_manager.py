@@ -1,7 +1,9 @@
-# sync_manager.py - THREAD-SAFE PARA PYTHON 3.13 - CORREGIDO
+# sync_manager.py - ACTUALIZADO: Persona → Feligres
 """
 Sistema de sincronización optimizado para evitar errores de threading.
 Compatible con Python 3.13 en Windows.
+
+CAMBIO ARQUITECTÓNICO: Todos los modelos actualizados para usar Feligres
 """
 
 from typing import List, Dict, Any, Optional, Type, Tuple
@@ -15,8 +17,8 @@ from models import (
     # Geografía
     Pais, Provincia, Arquidiocesis, Decanato, Parroquia, Comunidad, Capilla,
     
-    # Personas
-    Persona, Telefono, Direccion,
+    # ⚠️ CAMBIO CRÍTICO: Persona → Feligres
+    Feligres, Telefono, Direccion,
     
     # Catequesis
     CentroCatecismo, Catecumeno, GrupoCatequesis, RolCatequista, RolCatequistaIntegrante,
@@ -25,11 +27,13 @@ from models import (
     Presbitero,
     
     # Sacramentos
-    SacramentoBautizo, SacramentoConfirmacion, SacramentoEucaristia, SacramentoMatrimonio, RenovacionBautismal, RenovacionBautismal,
+    SacramentoBautizo, SacramentoConfirmacion, SacramentoEucaristia, 
+    SacramentoMatrimonio, RenovacionBautismal,
     
     # Grupos y educación
-    GrupoParroquial, Rol, MembresiaGrupo, Curso, TemaCurso, Actividad, Horario, Salon, ReservacionSalon, Sesion,
-    Inscripcion, RegistroAsistencia, ReunionGrupal, AsistenciaReunion,
+    GrupoParroquial, Rol, MembresiaGrupo, Curso, TemaCurso, Actividad, 
+    Horario, Salon, ReservacionSalon, Sesion, Inscripcion, RegistroAsistencia, 
+    ReunionGrupal, AsistenciaReunion,
     
     # Sistema
     Usuario,
@@ -54,8 +58,8 @@ from models import (
 
 # Campos únicos por modelo
 UNIQUE_FIELDS = {
-    'persona': ['curp'],
-    'usuario': ['nombre_usuario'],
+    'feligres': ['curp'],  # ⚠️ CAMBIO: 'persona' → 'feligres'
+    'usuario': ['username'],
     'arquidiocesis': ['nombre_arquidiocesis'],
     'decanato': ['nombre_decanato'],
     'parroquia': ['nombre_parroquia'],
@@ -75,42 +79,109 @@ UNIQUE_FIELDS = {
     'plantilla_correo_constancia': ['nombre_plantilla'],
 }
 
-# ✅ ORDEN DE SINCRONIZACIÓN CORRECTO (solo modelos que EXISTEN)
+# ✅ ORDEN DE SINCRONIZACIÓN COMPLETO Y CORRECTO
 SYNC_ORDER = [
-    # Geografía
-    Pais, Provincia, Arquidiocesis, Decanato, Parroquia, Comunidad, Capilla,
+    # ========================================
+    # GEOGRAFÍA (sin cambios)
+    # ========================================
+    Pais,
+    Provincia,
+    Arquidiocesis,
+    Decanato,
+    Parroquia,
+    Comunidad,
+    Capilla,
     
-    # Personas
-    Persona, Telefono, Direccion,
+    # ========================================
+    # ⚠️ FELIGRESES (ANTES: PERSONAS)
+    # ========================================
+    Feligres,      # ⚠️ CAMBIO CRÍTICO
+    Telefono,      # Depende de Feligres
+    Direccion,     # Depende de Feligres
     
-    # Catequesis
-    CentroCatecismo, GrupoCatequesis, RolCatequista, RolCatequistaIntegrante, Catecumeno,
+    # ========================================
+    # CATEQUESIS
+    # ========================================
+    CentroCatecismo,
+    GrupoCatequesis,
+    RolCatequista,
+    RolCatequistaIntegrante,
+    Catecumeno,    # Depende de Feligres
     
-    # Clero
-    Presbitero,
+    # ========================================
+    # CLERO
+    # ========================================
+    Presbitero,    # Depende de Feligres
     
-    # Sacramentos
-    SacramentoBautizo, SacramentoConfirmacion, SacramentoEucaristia, SacramentoMatrimonio,
+    # ========================================
+    # SACRAMENTOS
+    # ========================================
+    SacramentoBautizo,       # Depende de Feligres
+    SacramentoConfirmacion,  # Depende de Feligres
+    SacramentoEucaristia,    # Depende de Feligres
+    SacramentoMatrimonio,    # Depende de Feligres
+    RenovacionBautismal,     # Depende de Feligres
     
-    # Grupos y educación
-    GrupoParroquial, Rol, MembresiaGrupo, Curso, TemaCurso, Actividad, Salon, Sesion,
-    Inscripcion, RegistroAsistencia, ReunionGrupal, AsistenciaReunion,
+    # ========================================
+    # GRUPOS Y EDUCACIÓN
+    # ========================================
+    GrupoParroquial,
+    Rol,
+    MembresiaGrupo,  # Depende de Feligres
+    Curso,
+    TemaCurso,
+    Actividad,
+    Salon,
+    Horario,
+    ReservacionSalon,  # Depende de Feligres
+    Sesion,
+    Inscripcion,       # Depende de Feligres
+    RegistroAsistencia,  # Depende de Feligres
+    ReunionGrupal,
+    AsistenciaReunion,   # Depende de Feligres
     
-    # Sistema
-    Usuario,
+    # ========================================
+    # SISTEMA
+    # ========================================
+    PerfilUsuario,
+    Usuario,         # Depende de Feligres
+    UsuarioPerfil,   # Depende de Usuario
     
-    # Finanzas e inventario
-    PerfilUsuario, UsuarioPerfil,
-    PresupuestoAnual, CategoriaFinanciera, Donador, TransaccionFinanciera,
-    Bodega, AreaParroquial, CategoriaInventario, BienInventario, MovimientoBien,
+    # ========================================
+    # FINANZAS
+    # ========================================
+    PresupuestoAnual,
+    CategoriaFinanciera,
+    Donador,         # Puede depender de Feligres
+    TransaccionFinanciera,
     
-    # Actas
-    TipoReunion, ActaReunion, AsistenteActa, HistorialActa,
+    # ========================================
+    # INVENTARIO
+    # ========================================
+    Bodega,
+    AreaParroquial,
+    CategoriaInventario,
+    BienInventario,
+    MovimientoBien,  # Depende de Usuario (que depende de Feligres)
     
-    # Constancias
-    ConfiguracionConstancia, PlantillaCorreoConstancia, ConfiguracionCampoPlantilla,
-    SolicitudConstancia, ConstanciaEmitida,
-    HistorialTransaccionConstancia, VerificacionConstancia,
+    # ========================================
+    # ACTAS
+    # ========================================
+    TipoReunion,
+    ActaReunion,     # Depende de Feligres (responsable)
+    AsistenteActa,   # Depende de Feligres
+    HistorialActa,   # Depende de Usuario
+    
+    # ========================================
+    # CONSTANCIAS
+    # ========================================
+    ConfiguracionConstancia,
+    PlantillaCorreoConstancia,
+    ConfiguracionCampoPlantilla,
+    SolicitudConstancia,
+    ConstanciaEmitida,
+    HistorialTransaccionConstancia,
+    VerificacionConstancia,
 ]
 
 # ====================================================================
@@ -298,17 +369,21 @@ def sincronizar_tabla_simple(
         return creados, actualizados, errores + 1
 
 # ====================================================================
-# FUNCIÓN PRINCIPAL
+# FUNCIÓN PRINCIPAL: REMOTO → LOCAL
 # ====================================================================
 
 def sincronizar_bases_de_datos(engine_local, engine_remoto, st_display_func) -> bool:
-    """Sincroniza Remoto → Local de forma segura."""
+    """
+    Sincroniza Remoto → Local de forma segura.
+    ACTUALIZADO para usar modelo Feligres
+    """
     
     if not engine_local or not engine_remoto:
         st_display_func("❌ Se requieren ambas conexiones", is_error=True)
         return False
     
-    st_display_func("🔄 Iniciando sincronización...")
+    st_display_func("🔄 Iniciando sincronización (Remoto → Local)...")
+    st_display_func("📋 Modelo actualizado: Feligres (antes Persona)")
     cache = SyncCache()
     
     total_creados = total_actualizados = total_errores = 0
@@ -317,7 +392,11 @@ def sincronizar_bases_de_datos(engine_local, engine_remoto, st_display_func) -> 
         for i, modelo in enumerate(SYNC_ORDER, 1):
             tabla = modelo.__tablename__
             
-            st_display_func(f"📋 [{i}/{len(SYNC_ORDER)}] {tabla}...")
+            # Mensaje especial para Feligres
+            if tabla == "feligres":
+                st_display_func(f"📋 [{i}/{len(SYNC_ORDER)}] ⚠️ {tabla} (Modelo Base - antes 'persona')...")
+            else:
+                st_display_func(f"📋 [{i}/{len(SYNC_ORDER)}] {tabla}...")
             
             creados, actualizados, errores = sincronizar_tabla_simple(
                 modelo, engine_local, engine_remoto, cache, st_display_func, batch_size=50
@@ -344,6 +423,8 @@ def sincronizar_bases_de_datos(engine_local, engine_remoto, st_display_func) -> 
         if total_errores > 0:
             st_display_func(f"⚠️ Errores: {total_errores}", is_warning=True)
         
+        st_display_func("✅ Sincronización completada - Modelo Feligres activo")
+        
         return total_errores == 0
     
     except Exception as e:
@@ -352,17 +433,21 @@ def sincronizar_bases_de_datos(engine_local, engine_remoto, st_display_func) -> 
         return False
 
 # ====================================================================
-# LOCAL → REMOTO
+# FUNCIÓN AUXILIAR: LOCAL → REMOTO
 # ====================================================================
 
 def sincronizar_local_a_remoto(engine_local, engine_remoto, st_display_func) -> bool:
-    """Sincroniza Local → Remoto de forma segura."""
+    """
+    Sincroniza Local → Remoto de forma segura.
+    ACTUALIZADO para usar modelo Feligres
+    """
     
     if not engine_local or not engine_remoto:
         st_display_func("❌ Se requieren ambas conexiones", is_error=True)
         return False
     
     st_display_func("🔄 Sincronizando Local → Remoto...")
+    st_display_func("📋 Modelo actualizado: Feligres (antes Persona)")
     cache = SyncCache()
     
     total_enviados = total_actualizados = 0
@@ -387,7 +472,11 @@ def sincronizar_local_a_remoto(engine_local, engine_remoto, st_display_func) -> 
             if not pendientes:
                 continue
             
-            st_display_func(f"📤 {tabla}: {len(pendientes)} pendientes...")
+            # Mensaje especial para Feligres
+            if tabla == "feligres":
+                st_display_func(f"📤 feligres (Modelo Base): {len(pendientes)} pendientes...")
+            else:
+                st_display_func(f"📤 {tabla}: {len(pendientes)} pendientes...")
             
             for local in pendientes:
                 try:
@@ -448,8 +537,65 @@ def sincronizar_local_a_remoto(engine_local, engine_remoto, st_display_func) -> 
                 time.sleep(0.05)
         
         st_display_func(f"✅ Enviados: {total_enviados}, Actualizados: {total_actualizados}")
+        st_display_func("✅ Sincronización Local → Remoto completada")
         return True
     
     except Exception as e:
         st_display_func(f"❌ Error: {e}", is_error=True)
         return False
+
+# ====================================================================
+# VERIFICACIÓN DE INTEGRIDAD
+# ====================================================================
+
+def verificar_integridad_feligres(engine_local, engine_remoto, st_display_func) -> bool:
+    """
+    Verifica la integridad de los datos de Feligres entre ambas bases.
+    NUEVA FUNCIÓN: Específica para el modelo Feligres
+    """
+    st_display_func("🔍 Verificando integridad de Feligres...")
+    
+    try:
+        with Session(engine_local) as session_local:
+            feligreses_local = session_local.exec(select(Feligres)).all()
+        
+        with Session(engine_remoto) as session_remoto:
+            feligreses_remoto = session_remoto.exec(select(Feligres)).all()
+        
+        st_display_func(f"📊 Local: {len(feligreses_local)} feligreses")
+        st_display_func(f"📊 Remoto: {len(feligreses_remoto)} feligreses")
+        
+        # Verificar CURPs únicos
+        curps_local = {f.curp for f in feligreses_local if f.curp}
+        curps_remoto = {f.curp for f in feligreses_remoto if f.curp}
+        
+        solo_local = curps_local - curps_remoto
+        solo_remoto = curps_remoto - curps_local
+        
+        if solo_local:
+            st_display_func(f"⚠️ {len(solo_local)} feligreses solo en Local", is_warning=True)
+        
+        if solo_remoto:
+            st_display_func(f"⚠️ {len(solo_remoto)} feligreses solo en Remoto", is_warning=True)
+        
+        if not solo_local and not solo_remoto:
+            st_display_func("✅ Bases sincronizadas correctamente")
+            return True
+        
+        return False
+        
+    except Exception as e:
+        st_display_func(f"❌ Error verificando integridad: {e}", is_error=True)
+        return False
+
+# ====================================================================
+# EXPORTACIÓN
+# ====================================================================
+
+__all__ = [
+    'SYNC_ORDER',
+    'SyncCache',
+    'sincronizar_bases_de_datos',
+    'sincronizar_local_a_remoto',
+    'verificar_integridad_feligres',
+]
